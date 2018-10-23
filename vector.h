@@ -1,4 +1,5 @@
 /*
+ * 2018.07.05: "Hard-coded" L2 norm, since it's so common
  * 2014.12.20: Converted to Arduino for library. All lowers now equal zero.
  * 2011-06-21: operator >> now indexes using operator [], and does not read the vector size
  * [this last part is a hack that needs to be undone]
@@ -25,7 +26,7 @@ Note that at the end, I define a few frequently used classes:
 
 vector --> vector of doubles
 fvector --> vector of floats
-ivector --> vector of ints
+///////ivector --> vector of ints
 */
 
 #ifndef __LINALG_VECTOR_H
@@ -87,7 +88,7 @@ public:
       return _tIndex[i];
       }
 
-   int Length( void )const { return _upper + 1; }
+   unsigned int Length( void )const { return _upper + 1; }
    T Last(void) const {return (*this)[Length()-1];}
    void Zero(void)
    {
@@ -135,7 +136,7 @@ public:
    T CalcNorm( int )const;
 
    T CalcL1Norm( void )const { return CalcNorm( 1 ); } //temp -- make faster later
-   T CalcL2Norm( void )const { return CalcNorm( 2 ); }
+       T CalcL2Norm( void ) const;// { return CalcNorm( 2 ); }
 
    //ostream& Write (ostream&) const;
    //istream& Read (istream&);
@@ -403,13 +404,21 @@ T TVector < T >::AbsMax( void )const
 
 template < class T >
 T TVector < T >::CalcNorm( int order ) const
-   {
-   T tNorm = 0;
-   if ( !order ) //zero is surrogate for infinity norm
-      return AbsMax();
+{
+    T tNorm = 0;
+    if ( !order ) //zero is surrogate for infinity norm
+        return AbsMax();
+    
+    for ( int i = 0; i <= _upper; i++ ) tNorm += pow( fabs( _tIndex[i] ), order );
+    return pow( tNorm, 1.0 / ( double )order );
+}
 
-   for ( int i = 0; i <= _upper; i++ ) tNorm += pow( fabs( _tIndex[i] ), order );
-   return pow( tNorm, 1.0 / ( double )order );
-   }
+//"hard-code" L2 norm, since it's so common
+template < class T > T TVector < T >::CalcL2Norm( void ) const
+{
+    T tNorm = 0;
+    for ( int i = 0; i <= _upper; i++ ) tNorm += _tIndex[i] * _tIndex[i];
+    return sqrt(tNorm);
+}
 
 #endif
